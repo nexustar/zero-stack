@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>zero-stack</title>
+<style>
+  :root { color-scheme: light dark; }
+  * { box-sizing: border-box; }
+  body { font: 15px/1.5 system-ui, sans-serif; max-width: 640px; margin: 6vh auto; padding: 0 20px; }
+  h1 { margin: 0 0 2px; font-size: 22px; }
+  .sub { opacity: .6; margin: 0 0 22px; font-size: 13px; }
+  form { display: flex; gap: 8px; margin-bottom: 20px; }
+  input { flex: 1; padding: 10px 12px; border: 1px solid #8884; border-radius: 8px; background: transparent; color: inherit; }
+  button { padding: 10px 16px; border: 0; border-radius: 8px; background: #f6821f; color: #fff; font-weight: 600; cursor: pointer; }
+  button:disabled { opacity: .5; cursor: default; }
+  ul { list-style: none; padding: 0; margin: 0; }
+  li { padding: 12px 14px; border: 1px solid #8883; border-radius: 8px; margin-bottom: 8px; display: flex; justify-content: space-between; gap: 12px; }
+  li time { opacity: .5; font-size: 12px; white-space: nowrap; }
+  .empty { opacity: .5; padding: 18px 0; }
+</style>
+</head>
+<body>
+  <h1>📝 zero-stack notes</h1>
+  <p class="sub">Frontend (this page) → Worker API (<code>/api/notes</code>) → TiDB Cloud Zero. Zero-signup full stack.</p>
+
+  <form id="f">
+    <input id="b" placeholder="Write a note…" autocomplete="off" required />
+    <button id="btn" type="submit">Add</button>
+  </form>
+
+  <ul id="list"><li class="empty">Loading…</li></ul>
+
+<script>
+const list = document.getElementById('list');
+const fmt = (s) => s ? new Date(s.replace(' ', 'T') + 'Z').toLocaleString() : '';
+
+async function load() {
+  try {
+    const { notes } = await (await fetch('/api/notes')).json();
+    list.innerHTML = notes?.length
+      ? notes.map(n => `<li><span>${escapeHtml(n.body)}</span><time>${fmt(n.created_at)}</time></li>`).join('')
+      : '<li class="empty">No notes yet — add one above.</li>';
+  } catch (e) { list.innerHTML = `<li class="empty">Error: ${escapeHtml(String(e))}</li>`; }
+}
+
+function escapeHtml(s){ return s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+document.getElementById('f').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const input = document.getElementById('b'), btn = document.getElementById('btn');
+  const body = input.value.trim(); if (!body) return;
+  btn.disabled = true;
+  try {
+    const r = await fetch('/api/notes', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify({ body }) });
+    if (!r.ok) throw new Error((await r.json()).error || r.status);
+    input.value = ''; await load();
+  } catch (e) { alert('Failed: ' + e.message); }
+  finally { btn.disabled = false; input.focus(); }
+});
+
+load();
+</script>
+</body>
+</html>

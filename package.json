@@ -1,0 +1,16 @@
+{
+  "name": "zero-stack",
+  "version": "1.0.0",
+  "description": "zero-stack skill toolchain (pinned wrangler)",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "UNLICENSED",
+  "private": true,
+  "devDependencies": {
+    "wrangler": "^4.103.0"
+  }
+}
